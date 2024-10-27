@@ -1,0 +1,19 @@
+apiVersion : apps/v1
+kind: Deployment
+metadata:
+  name: gchentasky 
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gchentasky
+  template:
+    metadata:
+      labels:
+        app: gchentasky 
+    spec:
+      containers:
+        - name: gchentasky 
+          image: wiztecheval.azurecr.io/gchentasky
+          ports:
+          - containerPort: 8080
