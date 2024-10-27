@@ -1,0 +1,88 @@
+# MongoDB connection secret
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mongodb-secret
+type: Opaque
+stringData:
+  connection_string: "mongodb://mongoadmin:WizForTheWorld@10.0.0.6:27017/taskdb?authSource=admin"
+---
+# Service Account with admin privileges
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: admin-user
+  namespace: default
+---
+# Cluster Role Binding for admin privileges
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: admin-user
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+- kind: ServiceAccount
+  name: admin-user
+  namespace: default
+---
+# Config Map for wizexercise.txt
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: exercise-file
+data:
+  wizexercise.txt: |
+    This file is part of the Wiz exercise deployment.
+    Deployment timestamp: Sun Oct 27 08:26:44 EDT 2024
+---
+# Application Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webapp
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: webapp
+  template:
+    metadata:
+      labels:
+        app: webapp
+    spec:
+      serviceAccountName: admin-user
+      containers:
+      - name: webapp
+        image: taskycr17300.azurecr.io/webapp:latest
+        ports:
+        - containerPort: 8080
+        env:
+        - name: MONGODB_URI
+          valueFrom:
+            secretKeyRef:
+              name: mongodb-secret
+              key: connection_string
+        volumeMounts:
+        - name: exercise-file
+          mountPath: /app/wizexercise.txt
+          subPath: wizexercise.txt
+      volumes:
+      - name: exercise-file
+        configMap:
+          name: exercise-file
+---
+# Public Load Balancer Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: webapp-service
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 80
+    targetPort: 8080
+  selector:
+    app: webapp
