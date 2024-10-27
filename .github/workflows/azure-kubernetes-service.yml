@@ -59,7 +59,7 @@ jobs:
       - name: Azure login
         uses: azure/login@v1.4.6
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          credentials: ${{ secrets.AZURE_CREDENTIALS }}
 
 
       # Builds and pushes an image up to your Azure Container Registry
@@ -82,7 +82,7 @@ jobs:
       - name: Azure login
         uses: azure/login@v1.4.6
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          credentials: ${{ secrets.AZURE_CREDENTIALS }}
 
       # Use kubelogin to configure your kubeconfig for Azure auth
       - name: Set up kubelogin for non-interactive login
