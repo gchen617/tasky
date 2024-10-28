@@ -1,38 +1,19 @@
-# MongoDB connection secret
+# MongoDB Connection Secret (included here for clarity; may also be applied separately if needed)
 apiVersion: v1
 kind: Secret
 metadata:
   name: mongodb-secret
+  namespace: default
 type: Opaque
 stringData:
   connection_string: "mongodb://mongoadmin:WizForTheWorld@10.0.0.6:27017/taskdb?authSource=admin"
 ---
-# Service Account with admin privileges
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: admin-user
-  namespace: default
----
-# Cluster Role Binding for admin privileges
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: admin-user
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: cluster-admin
-subjects:
-- kind: ServiceAccount
-  name: admin-user
-  namespace: default
----
-# Config Map for wizexercise.txt
+# ConfigMap for wizexercise.txt
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: exercise-file
+  namespace: default
 data:
   wizexercise.txt: |
     This file is part of the Wiz exercise deployment.
@@ -43,6 +24,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: webapp
+  namespace: default
 spec:
   replicas: 2
   selector:
@@ -54,9 +36,11 @@ spec:
         app: webapp
     spec:
       serviceAccountName: admin-user
+      imagePullSecrets:
+        - name: wiztechevalfdc5-auth  # Synced with the pipeline for ACR access
       containers:
       - name: webapp
-        image: wiztecheval.azurecr.io/webapp:latest
+        image: wiztecheval.azurecr.io/gchentasky:latest  # Synced with pipeline image repository
         ports:
         - containerPort: 8080
         env:
@@ -74,15 +58,22 @@ spec:
         configMap:
           name: exercise-file
 ---
-# Public Load Balancer Service
+# Service Account and Role Binding
 apiVersion: v1
-kind: Service
+kind: ServiceAccount
 metadata:
-  name: webapp-service
-spec:
-  type: LoadBalancer
-  ports:
-  - port: 80
-    targetPort: 8080
-  selector:
-    app: webapp
+  name: admin-user
+  namespace: default
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: admin-user
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+- kind: ServiceAccount
+  name: admin-user
+  namespace: default
