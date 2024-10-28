@@ -56,7 +56,7 @@ spec:
       serviceAccountName: admin-user
       containers:
       - name: webapp
-        image: taskycr17300.azurecr.io/webapp:latest
+        image: wiztecheval.azurecr.io/webapp:latest
         ports:
         - containerPort: 8080
         env:
